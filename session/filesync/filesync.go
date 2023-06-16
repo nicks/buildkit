@@ -1,6 +1,7 @@
 package filesync
 
 import (
+	"compress/gzip"
 	"context"
 	"fmt"
 	io "io"
@@ -13,6 +14,7 @@ import (
 	fstypes "github.com/tonistiigi/fsutil/types"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	grpcgzip "google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
@@ -219,7 +221,11 @@ func FSSync(ctx context.Context, c session.Caller, opt FSSendRequestOpt) error {
 		}
 		stream = cc
 	case "diffcopy":
-		cc, err := client.DiffCopy(ctx)
+		if err := grpcgzip.SetLevel(gzip.BestCompression); err != nil {
+			panic(err)
+		}
+		gc := grpc.UseCompressor(grpcgzip.Name)
+		cc, err := client.DiffCopy(ctx, gc)
 		if err != nil {
 			return err
 		}

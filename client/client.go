@@ -1,6 +1,7 @@
 package client
 
 import (
+	"compress/gzip"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
@@ -27,6 +28,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	grpcgzip "google.golang.org/grpc/encoding/gzip"
 )
 
 type Client struct {
@@ -40,9 +42,13 @@ type ClientOpt interface {
 
 // New returns a new buildkit client. Address can be empty for the system-default address.
 func New(ctx context.Context, address string, opts ...ClientOpt) (*Client, error) {
+	if err := grpcgzip.SetLevel(gzip.BestCompression); err != nil {
+		panic(err)
+	}
 	gopts := []grpc.DialOption{
 		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(defaults.DefaultMaxRecvMsgSize)),
 		grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(defaults.DefaultMaxSendMsgSize)),
+		grpc.WithDefaultCallOptions(grpc.UseCompressor(grpcgzip.Name)),
 	}
 	needDialer := true
 

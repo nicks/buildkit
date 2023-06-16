@@ -1,6 +1,7 @@
 package session
 
 import (
+	"compress/gzip"
 	"context"
 	"math"
 	"net"
@@ -17,6 +18,7 @@ import (
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	grpcgzip "google.golang.org/grpc/encoding/gzip"
 	"google.golang.org/grpc/health/grpc_health_v1"
 )
 
@@ -30,6 +32,10 @@ func serve(ctx context.Context, grpcServer *grpc.Server, conn net.Conn) {
 }
 
 func grpcClientConn(ctx context.Context, conn net.Conn) (context.Context, *grpc.ClientConn, error) {
+	if err := grpcgzip.SetLevel(gzip.BestCompression); err != nil {
+		panic(err)
+	}
+
 	var unary []grpc.UnaryClientInterceptor
 	var stream []grpc.StreamClientInterceptor
 
